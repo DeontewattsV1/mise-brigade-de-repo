@@ -2,8 +2,6 @@
 
 ![Issues & Review station](./assets/logo.svg)
 
-Part of `mise-brigade-de-repo`.
-
 ## Station name
 
 **Saucier Triage Station**
