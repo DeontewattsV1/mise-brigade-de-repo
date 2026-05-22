@@ -1,6 +1,6 @@
-# Mise Brigade Action Stations
+# mise-brigade-de-repo Action Stations
 
-Each folder teaches one stewardship mode as a kitchen station. This keeps comparison, onboarding, and README storytelling clean.
+Each folder teaches one stewardship mode for `mise-brigade-de-repo` as a kitchen station. This keeps comparison, onboarding, and README storytelling clean.
 
 | Station | Folder | Purpose |
 |---|---|---|
