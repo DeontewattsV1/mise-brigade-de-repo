@@ -2,6 +2,8 @@
 
 ![Branch Corrections station](./assets/logo.svg)
 
+Part of `mise-brigade-de-repo`.
+
 ## Station name
 
 **Knife Work Branch Station**

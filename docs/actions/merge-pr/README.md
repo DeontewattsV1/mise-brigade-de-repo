@@ -2,6 +2,8 @@
 
 ![Merge & PR station](./assets/logo.svg)
 
+Part of `mise-brigade-de-repo`.
+
 ## Station name
 
 **Expediter Merge Station**

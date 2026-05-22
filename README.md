@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="brand/assets/svg/readme-hero-banner.svg" alt="Mise Brigade de Repo hero banner" width="100%"/>
+  <img src="brand/assets/svg/readme-hero-banner.svg" alt="mise-brigade-de-repo hero banner" width="100%"/>
 </p>
 
-# Mise Brigade de Repo
+# mise-brigade-de-repo
 
 **Chef-coded stewardship for clean repositories.**
 
-Mise Repo Steward v2 with safer automation boundaries, better branch intelligence, PR merge gates, repo health reporting, and generated cleanup PRs.
+`mise-brigade-de-repo` is a repo stewardship system with safer automation boundaries, better branch intelligence, PR merge gates, repo health reporting, and generated cleanup PRs.
 
-This repository is part of the **Mise en Place Hub**: every workflow has a station, every branch has a plate, and every write action has a safety gate.
+This repository is part of the **mise en place hub**: every workflow has a station, every branch has a plate, and every write action has a safety gate.
 
 <p align="center">
-  <img src="brand/assets/svg/badge-mise-steward.svg" alt="Mise Steward"/>
+  <img src="brand/assets/svg/badge-mise-steward.svg" alt="mise-brigade-de-repo steward badge"/>
 </p>
 
 ---
@@ -66,8 +66,8 @@ gh workflow run "Mise Repo Steward" -f mode=repo-clean -f apply_changes=true
 
 | Path | Purpose |
 |---|---|
-| [`brand/assets/svg`](brand/assets/svg/) | Hero banner, badge, and repo-level visual system. |
-| [`brand/brand.tokens.json`](brand/brand.tokens.json) | Color, voice, naming, and mode tokens. |
+| [`brand/assets/svg`](brand/assets/svg/) | Hero banner, badge, and repo-level visual system for `mise-brigade-de-repo`. |
+| [`brand/brand.tokens.json`](brand/brand.tokens.json) | Color, voice, naming, and mode tokens for `mise-brigade-de-repo`. |
 | [`brand/brand.css`](brand/brand.css) | CSS variables for docs or web surfaces. |
 | [`docs/actions`](docs/actions/) | One comparison and learning folder per stewardship action. |
 
@@ -78,7 +78,7 @@ mkdir -p .github/workflows
 cp mise-repo-steward.yml .github/workflows/mise-repo-steward.yml
 
 git add .github/workflows/mise-repo-steward.yml
-git commit -m "ci: upgrade Mise Repo Steward workflow"
+git commit -m "ci: upgrade mise-brigade-de-repo steward workflow"
 git push origin main
 ```
 
