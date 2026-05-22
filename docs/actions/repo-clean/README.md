@@ -2,6 +2,8 @@
 
 ![Repo Clean station](./assets/logo.svg)
 
+Part of `mise-brigade-de-repo`.
+
 ## Station name
 
 **Dish Pit Cleanup Station**
