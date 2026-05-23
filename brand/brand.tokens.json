@@ -1,7 +1,6 @@
 {
-  "name": "mise-brigade-de-repo",
-  "repository": "mise-brigade-de-repo",
-  "system": "mise en place hub",
+  "name": "Mise Brigade de Repo",
+  "system": "Mise en Place Hub",
   "theme": "Code Chef / Repository Stewardship",
   "tagline": "Chef-coded stewardship for clean repositories.",
   "colors": {
