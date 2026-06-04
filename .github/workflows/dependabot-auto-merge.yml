@@ -137,15 +137,24 @@ jobs:
           
           # Check all check runs passed
           CHECK_RUNS=$(gh api repos/${{ github.repository }}/commits/$PR_SHA/check-runs 2>/dev/null || echo '{"check_runs": []}')
-          FAILED_CHECKS=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion == "failure" or .conclusion == "timed_out")] | length')
+          BLOCKING_CHECKS=$(echo "$CHECK_RUNS" | jq '
+            [
+              .check_runs[]
+              | select(
+                  .status != "completed"
+                  or (.conclusion != "success" and .conclusion != "neutral" and .conclusion != "skipped")
+                )
+            ] | length
+          ')
           
-          echo "Failed check runs: $FAILED_CHECKS"
+          echo "Blocking check runs: $BLOCKING_CHECKS"
           
-          if [[ "$FAILED_CHECKS" != "0" ]]; then
-            echo "Some checks failed. Skipping."
+          if [[ "$BLOCKING_CHECKS" != "0" ]]; then
+            echo "Some checks are incomplete or non-passing. Skipping."
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "reason=failed_checks" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
           fi
           
           echo "PR is ready to merge!"
