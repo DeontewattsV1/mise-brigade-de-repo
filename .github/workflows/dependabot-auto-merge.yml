@@ -13,10 +13,11 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  statuses: read
   checks: read
 
 concurrency:
-  group: dependabot-auto-merge-${{ github.event.pull_request.number || github.ref }}
+  group: dependabot-auto-merge-${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number }}
   cancel-in-progress: true
 
 jobs:
@@ -24,133 +25,162 @@ jobs:
     name: Handle Dependabot PR
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
-    outputs:
-      mergeable: ${{ steps.check-status.outputs.mergeable }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - name: Wait for required checks
-        id: wait-for-checks
+      - name: Get PR information
+        id: pr-info
         run: |
           set -euo pipefail
           
-          # Get the PR number
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          if [[ -z "$PR_NUMBER" ]]; then
-            PR_NUMBER=$(echo "${{ github.event.workflow_run.pull_requests[0].number }}" 2>/dev/null || echo "")
+          # Determine PR number from different event types
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            PR_SHA="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${{ github.event_name }}" == "workflow_run" && -n "${{ toJson(github.event.workflow_run.pull_requests) }}" ]]; then
+            PR_NUMBER=$(echo '${{ toJson(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number // empty')
+            PR_SHA="${{ github.event.workflow_run.head_sha }}"
+          else
+            echo "Could not determine PR number from event"
+            exit 1
           fi
           
           if [[ -z "$PR_NUMBER" ]]; then
-            echo "Could not determine PR number, exiting"
+            echo "PR number is empty"
             exit 1
           fi
           
           echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "PR_SHA=$PR_SHA" >> "$GITHUB_OUTPUT"
+          echo "Processing PR #$PR_NUMBER"
 
-      - name: Check PR mergeable status
-        id: check-status
+      - name: Wait for status checks to complete
         run: |
           set -euo pipefail
           
-          PR_NUMBER="${{ steps.wait-for-checks.outputs.PR_NUMBER }}"
+          PR_NUMBER="${{ steps.pr-info.outputs.PR_NUMBER }}"
+          PR_SHA="${{ steps.pr-info.outputs.PR_SHA }}"
           
-          echo "Checking status for PR #$PR_NUMBER"
+          echo "Waiting for status checks to complete on PR #$PR_NUMBER..."
           
-          # Get the PR details using GitHub CLI
+          # Wait for checks to settle
+          sleep 10
+          
+          # Check current status
+          STATUS_JSON=$(gh api repos/${{ github.repository }}/commits/$PR_SHA/status 2>/dev/null || echo '{"state": "pending"}')
+          STATE=$(echo "$STATUS_JSON" | jq -r '.state')
+          
+          echo "Current commit status: $STATE"
+          
+          # If pending, wait up to 5 minutes
+          if [[ "$STATE" == "pending" ]]; then
+            echo "Status checks are still pending, waiting..."
+            for i in {1..30}; do
+              sleep 10
+              STATUS_JSON=$(gh api repos/${{ github.repository }}/commits/$PR_SHA/status 2>/dev/null || echo '{"state": "pending"}')
+              STATE=$(echo "$STATUS_JSON" | jq -r '.state')
+              echo "Status check #$i: $STATE"
+              if [[ "$STATE" != "pending" ]]; then
+                break
+              fi
+            done
+          fi
+          
+          echo "Final status: $STATE"
+
+      - name: Verify PR is ready to merge
+        id: verify-merge
+        run: |
+          set -euo pipefail
+          
+          PR_NUMBER="${{ steps.pr-info.outputs.PR_NUMBER }}"
+          PR_SHA="${{ steps.pr-info.outputs.PR_SHA }}"
+          
+          echo "Verifying PR #$PR_NUMBER is ready to merge..."
+          
+          # Get PR details
           PR_STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
           PR_IS_DRAFT=$(gh pr view "$PR_NUMBER" --json isDraft --jq '.isDraft')
+          PR_MERGEABLE=$(gh pr view "$PR_NUMBER" --json mergeable --jq '.mergeable')
           
           echo "PR State: $PR_STATE"
           echo "Is Draft: $PR_IS_DRAFT"
+          echo "Mergeable: $PR_MERGEABLE"
           
           if [[ "$PR_STATE" != "OPEN" ]]; then
-            echo "PR is not open, skipping"
-            echo "mergeable=false" >> "$GITHUB_OUTPUT"
+            echo "PR is not open. Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "reason=not_open" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
           if [[ "$PR_IS_DRAFT" == "true" ]]; then
-            echo "PR is a draft, skipping"
-            echo "mergeable=false" >> "$GITHUB_OUTPUT"
+            echo "PR is a draft. Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "reason=is_draft" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
-          # Wait a moment for status checks to settle
-          sleep 5
+          # Check commit status
+          STATUS_JSON=$(gh api repos/${{ github.repository }}/commits/$PR_SHA/status 2>/dev/null || echo '{"state": "pending"}')
+          STATE=$(echo "$STATUS_JSON" | jq -r '.state')
           
-          # Get all status checks
-          echo "Checking commit status..."
-          STATUSES=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha }}/status 2>/dev/null || echo '{"state": "pending"}')
-          STATE=$(echo "$STATUSES" | jq -r '.state')
-          
-          echo "Commit status state: $STATE"
-          
-          # Check if all required checks have passed
-          if [[ "$STATE" == "success" ]]; then
-            # Verify all check runs passed
-            CHECK_RUNS=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha }}/check-runs 2>/dev/null || echo '{"check_runs": []}')
-            TOTAL_CHECKS=$(echo "$CHECK_RUNS" | jq '.check_runs | length')
-            FAILED_CHECKS=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion == "failure")] | length')
-            
-            echo "Total checks: $TOTAL_CHECKS"
-            echo "Failed checks: $FAILED_CHECKS"
-            
-            if [[ "$FAILED_CHECKS" == "0" && "$TOTAL_CHECKS" != "0" ]]; then
-              echo "All checks passed, PR is mergeable"
-              echo "mergeable=true" >> "$GITHUB_OUTPUT"
-            elif [[ "$TOTAL_CHECKS" == "0" ]]; then
-              # No checks required, allow merge
-              echo "No checks configured, allowing merge"
-              echo "mergeable=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "Some checks failed or pending"
-              echo "mergeable=false" >> "$GITHUB_OUTPUT"
-            fi
-          elif [[ "$STATE" == "pending" ]]; then
-            echo "Checks still pending"
-            echo "mergeable=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Status is: $STATE"
-            echo "mergeable=false" >> "$GITHUB_OUTPUT"
+          if [[ "$STATE" != "success" ]]; then
+            echo "Commit status is not success (current: $STATE). Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "reason=checks_not_passed" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          
+          # Check all check runs passed
+          CHECK_RUNS=$(gh api repos/${{ github.repository }}/commits/$PR_SHA/check-runs 2>/dev/null || echo '{"check_runs": []}')
+          FAILED_CHECKS=$(echo "$CHECK_RUNS" | jq '[.check_runs[] | select(.conclusion == "failure" or .conclusion == "timed_out")] | length')
+          
+          echo "Failed check runs: $FAILED_CHECKS"
+          
+          if [[ "$FAILED_CHECKS" != "0" ]]; then
+            echo "Some checks failed. Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "reason=failed_checks" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          echo "PR is ready to merge!"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Merge Dependabot PR
-        if: steps.check-status.outputs.mergeable == 'true'
+        if: steps.verify-merge.outputs.ready == 'true'
         run: |
           set -euo pipefail
           
-          PR_NUMBER="${{ steps.wait-for-checks.outputs.PR_NUMBER }}"
+          PR_NUMBER="${{ steps.pr-info.outputs.PR_NUMBER }}"
           
           echo "Merging Dependabot PR #$PR_NUMBER"
           
-          # Get PR info for the merge message
+          # Get PR info
           PR_TITLE=$(gh pr view "$PR_NUMBER" --json title --jq '.title')
-          PR_AUTHOR=$(gh pr view "$PR_NUMBER" --json user --jq '.user.login')
-          
           echo "PR Title: $PR_TITLE"
-          echo "Author: $PR_AUTHOR"
           
-          # Try to merge with squash (default and recommended for Dependabot)
-          gh pr merge "$PR_NUMBER" \
-            --squash \
-            --delete-branch \
-            --auto \
-            || {
-              # If auto-merge fails, try without auto flag
-              echo "Auto-merge flag not set, attempting direct merge..."
-              gh pr merge "$PR_NUMBER" \
-                --squash \
-                --delete-branch \
-                || echo "Merge failed - may need admin intervention or branch protection"
-            }
-          
-          echo "Merge completed for PR #$PR_NUMBER"
+          # Merge with squash
+          if gh pr merge "$PR_NUMBER" --squash --delete-branch --auto; then
+            echo "Successfully merged PR #$PR_NUMBER"
+          else
+            echo "Auto-merge failed, attempting direct merge..."
+            if gh pr merge "$PR_NUMBER" --squash --delete-branch; then
+              echo "Successfully merged PR #$PR_NUMBER (direct merge)"
+            else
+              echo "Merge failed - may need manual intervention"
+              exit 1
+            fi
+          fi
 
-      - name: Report skipped status
-        if: steps.check-status.outputs.mergeable != 'true'
+      - name: Report status
+        if: steps.verify-merge.outputs.ready != 'true'
         run: |
-          echo "PR is not ready for auto-merge (checks pending, failed, or PR not open)"
-          echo "Will retry on next workflow trigger"
+          PR_NUMBER="${{ steps.pr-info.outputs.PR_NUMBER }}"
+          REASON="${{ steps.verify-merge.outputs.reason }}"
+          echo "PR #$PR_NUMBER not ready for merge. Reason: $REASON"
+          echo "Will retry on next workflow trigger."
