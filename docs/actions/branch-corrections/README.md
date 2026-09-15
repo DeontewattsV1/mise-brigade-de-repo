@@ -1,3 +1,5 @@
+<p align="center"><img src="../../../brand/assets/svg/workflow-branch-corrections.svg" alt="Branch Corrections workflow station" width="100%"/></p>
+
 # Branch Corrections
 
 ![Branch Corrections station](./assets/logo.svg)

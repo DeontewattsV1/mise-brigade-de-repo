@@ -10,22 +10,30 @@
     "sauce_gold": "#F6C453",
     "flame_orange": "#FF7A1A",
     "garnish_green": "#22C55E",
-    "blue_flame": "#38BDF8"
+    "blue_flame": "#38BDF8",
+    "steel": "#94A3B8",
+    "panel": "#172033",
+    "muted": "#64748B"
   },
-  "workflow_modes": [
-    "issues-review",
-    "merge-pr",
-    "branch-corrections",
-    "comments-commits",
-    "repo-clean"
-  ],
-  "safety_language": [
-    "GITHUB_TOKEN",
-    "scoped job-level permissions",
-    "no pull_request_target",
-    "no PAT recursion",
-    "[skip ci] generated commits",
-    "trusted collaborator command routing",
-    "write actions only when apply is explicitly requested"
-  ]
+  "semantics": {
+    "inspect_route": "blue_flame",
+    "active_work": "sauce_gold",
+    "write_authority": "flame_orange",
+    "verified_safe": "garnish_green",
+    "hard_failure": "red reserved for security/failure states"
+  },
+  "workflow_modes": ["issues-review", "merge-pr", "branch-corrections", "comments-commits", "repo-clean"],
+  "surfaces": {
+    "readme": "brand/assets/svg/readme-hero-banner.svg",
+    "social_preview": "brand/assets/svg/social-preview-1280x640.svg",
+    "docs": "brand/assets/svg/docs-hero.svg",
+    "examples": "brand/assets/svg/examples-hero.svg",
+    "releases": "brand/assets/svg/releases-hero.svg",
+    "packages": "brand/assets/svg/packages-hero.svg",
+    "demos": "brand/assets/svg/demos-hero.svg",
+    "user_guide": "brand/assets/svg/user-guide-hero.svg",
+    "safety": "brand/assets/svg/safety-guidance.svg",
+    "architecture": "brand/assets/svg/architecture-flow.svg"
+  },
+  "safety_language": ["GITHUB_TOKEN", "scoped job-level permissions", "no pull_request_target", "no PAT recursion", "[skip ci] generated commits", "trusted collaborator command routing", "write actions only when apply is explicitly requested"]
 }

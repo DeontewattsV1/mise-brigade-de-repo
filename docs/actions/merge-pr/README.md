@@ -1,3 +1,5 @@
+<p align="center"><img src="../../../brand/assets/svg/workflow-merge-pr.svg" alt="Merge and PR workflow station" width="100%"/></p>
+
 # Merge & PR
 
 ![Merge & PR station](./assets/logo.svg)

@@ -1,3 +1,5 @@
+<p align="center"><img src="../../../brand/assets/svg/workflow-repo-clean.svg" alt="Repo Clean workflow station" width="100%"/></p>
+
 # Repo Clean
 
 ![Repo Clean station](./assets/logo.svg)

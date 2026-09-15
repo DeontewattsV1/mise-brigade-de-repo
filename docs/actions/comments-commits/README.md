@@ -1,3 +1,5 @@
+<p align="center"><img src="../../../brand/assets/svg/workflow-comments-commits.svg" alt="Comments and Commits workflow station" width="100%"/></p>
+
 # Comments & Commits
 
 ![Comments & Commits station](./assets/logo.svg)

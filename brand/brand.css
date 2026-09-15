@@ -6,14 +6,13 @@
   --mise-flame-orange: #FF7A1A;
   --mise-garnish-green: #22C55E;
   --mise-blue-flame: #38BDF8;
-  --mise-font-display: ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial;
-  --mise-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --mise-steel: #94A3B8;
+  --mise-panel: #172033;
+  --mise-muted: #64748B;
 }
-
-.mise-card {
-  background: var(--mise-cast-iron);
-  color: var(--mise-flour);
-  border: 1px solid rgba(248, 243, 232, 0.16);
-  border-radius: 18px;
-  padding: 1rem;
-}
+.mise-surface { color: var(--mise-flour); background: var(--mise-stockpot-black); }
+.mise-panel { background: var(--mise-panel); border: 1px solid #263246; }
+.mise-inspect { color: var(--mise-blue-flame); }
+.mise-action { color: var(--mise-sauce-gold); }
+.mise-authority { color: var(--mise-flame-orange); }
+.mise-verified { color: var(--mise-garnish-green); }

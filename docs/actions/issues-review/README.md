@@ -1,3 +1,5 @@
+<p align="center"><img src="../../../brand/assets/svg/workflow-issues-review.svg" alt="Issues and Review workflow station" width="100%"/></p>
+
 # Issues & Review
 
 ![Issues & Review station](./assets/logo.svg)
